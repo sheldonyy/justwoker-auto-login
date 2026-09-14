@@ -35,7 +35,7 @@ def run():
         print(f"打开 {URL}")
         page.goto(URL, wait_until="domcontentloaded")
 
-        # ---------- 第一步：关闭公告弹窗 ----------
+        # 第一步：关闭公告弹窗
         print("尝试关闭公告弹窗...")
         try:
             page.get_by_test_id("notice-dialog-close").click(timeout=8000)
@@ -43,37 +43,39 @@ def run():
         except Exception as e:
             print(f"没找到公告弹窗（可能没有或已关）：{e}")
 
-        # ---------- 第二步：点击 GitHub 登录 ----------
+        # 第二步：点击 GitHub 登录
         print("点击 GitHub 登录按钮...")
         try:
             page.get_by_role("button", name="使用 GitHub 继续").click(timeout=8000)
         except Exception:
-            # 兜底：结构选择器
             page.locator(
                 "#root form div.flex.flex-col.gap-2 > button"
             ).first.click()
         print("已点击 GitHub 登录")
 
-        # ---------- 第三步：填写 GitHub 账号密码 ----------
-        print("等待跳转到 GitHub...")
-        page.wait_for_url("**github.com/**", timeout=30000)
+        # 第三步：等 GitHub 登录表单出现（不依赖 URL / load 事件）
+        print("等待 GitHub 登录表单...")
+        page.wait_for_selector('input[name="login"]', timeout=30000)
+        print(f"当前 URL: {page.url}")
 
+        # 第四步：填写账号密码
         print("填写 GitHub 登录信息...")
         page.fill('input[name="login"]', GITHUB_USER)
         page.fill('input[name="password"]', GITHUB_PASS)
         page.click('input[type="submit"][name="commit"]')
 
-        # ---------- 第四步：处理 OAuth 授权页 ----------
+        # 第五步：处理 OAuth 授权页（如果出现）
+        print("检查 OAuth 授权页...")
         try:
-            page.wait_for_url("**github.com/login/oauth/**", timeout=20000)
+            page.wait_for_selector('button[name="authorize"]', timeout=15000)
             print("检测到 OAuth 授权页，点击 Authorize...")
-            page.click('button[name="authorize"]', timeout=10000)
+            page.click('button[name="authorize"]')
         except Exception:
             print("未检测到 OAuth 授权页，跳过")
 
-        # ---------- 第五步：等待回到目标站点 ----------
+        # 第六步：等回到 justwoker
         print("等待回到 justwoker...")
-        page.wait_for_url("**justwoker.icu/**", timeout=45000)
+        page.wait_for_url(lambda url: "justwoker.icu" in url, timeout=45000, wait_until="commit")
         page.wait_for_load_state("networkidle", timeout=30000)
 
         page.screenshot(path="after_login.png", full_page=True)
