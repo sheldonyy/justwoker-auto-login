@@ -15,10 +15,8 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Checkout
+      - name: Checkout main
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -44,12 +42,32 @@ jobs:
           path: after_login.png
           if-no-files-found: ignore
 
+      # ---------- 保活：自动创建并推送到 keepalive 分支 ----------
       - name: Keepalive commit
         if: always()
         run: |
+          set -e
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          REMOTE_URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+
+          # 尝试切到 keepalive 分支：存在就 checkout，不存在就新建孤儿分支
+          if git ls-remote --exit-code --heads "$REMOTE_URL" keepalive > /dev/null 2>&1; then
+            echo "keepalive 分支已存在，切换过去"
+            git fetch origin keepalive
+            git checkout keepalive
+          else
+            echo "keepalive 分支不存在，创建孤儿分支"
+            git checkout --orphan keepalive
+            git rm -rf . || true
+            echo "# keepalive" > README.md
+            git add README.md
+            git commit -m "init keepalive branch"
+          fi
+
+          # 写时间戳并推送
           date -u +"%Y-%m-%dT%H:%M:%SZ" > .keepalive
           git add .keepalive
-          git commit -m "keepalive $(date -u +%Y-%m-%d)" || echo "no change"
-          git push
+          git commit -m "keepalive $(date -u +%Y-%m-%d)" || echo "no change to commit"
+          git push -u origin keepalive
