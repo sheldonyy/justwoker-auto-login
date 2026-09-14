@@ -1,0 +1,42 @@
+name: Daily JustDoWork Login
+
+on:
+  schedule:
+    # 每天 UTC 01:00（北京时间 09:00）运行一次
+    - cron: "0 1 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  login:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+
+      - name: Run login script
+        env:
+          GH_LOGIN_USER: ${{ secrets.GH_LOGIN_USER }}
+          GH_LOGIN_PASS: ${{ secrets.GH_LOGIN_PASS }}
+        run: python login.py
+
+      - name: Upload screenshot (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: login-screenshot
+          path: after_login.png
+          if-no-files-found: ignore
+          
