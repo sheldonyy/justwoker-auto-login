@@ -6,6 +6,9 @@ on:
     - cron: "0 1 * * *"
   workflow_dispatch: {}
 
+permissions:
+  contents: write
+
 jobs:
   login:
     runs-on: ubuntu-latest
@@ -14,6 +17,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -38,3 +43,13 @@ jobs:
           name: login-screenshot
           path: after_login.png
           if-no-files-found: ignore
+
+      - name: Keepalive commit
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > .keepalive
+          git add .keepalive
+          git commit -m "keepalive $(date -u +%Y-%m-%d)" || echo "no change"
+          git push
