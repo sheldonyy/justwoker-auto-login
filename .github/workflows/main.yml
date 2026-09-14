@@ -28,8 +28,7 @@ jobs:
 
       - name: Run login script
         env:
-          GH_LOGIN_USER: ${{ secrets.GH_LOGIN_USER }}
-          GH_LOGIN_PASS: ${{ secrets.GH_LOGIN_PASS }}
+          JUSTWOKER_COOKIES: ${{ secrets.JUSTWOKER_COOKIES }}
         run: python login.py
 
       - name: Upload screenshot (always)
@@ -39,4 +38,3 @@ jobs:
           name: login-screenshot
           path: after_login.png
           if-no-files-found: ignore
-          
