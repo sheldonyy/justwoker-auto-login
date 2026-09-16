@@ -2,10 +2,8 @@ name: Daily JustDoWork Login
 
 on:
   schedule:
-    # 每天 UTC 01:00（北京时间 09:00）运行一次
-    - cron: "0 1 * * *"
-    # 临时用于验证的每小时触发（测试完成后请移除）
-    - cron: "0 * * * *"
+    # 每天 UTC 02:00（北京时间 10:00）运行一次
+    - cron: "0 2 * * *"
   workflow_dispatch: {}
 
 permissions:
